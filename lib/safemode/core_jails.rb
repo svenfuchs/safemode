@@ -39,88 +39,887 @@ module Safemode
   end
 
   # these methods are allowed in all classes if they are present
-  @@default_methods = %w( % & * ** + +@ - -@ / < << <= <=> ! != == === > >= >> ^ | ~
-                          eql? equal? new methods is_a? kind_of? nil?
-                          [] []= to_a to_jail to_s inspect to_param not freeze)
+  @@default_methods = %w(
+    !
+    !=
+    %
+    &
+    *
+    **
+    +
+    +@
+    -
+    -@
+    /
+    <
+    <<
+    <=
+    <=>
+    ==
+    ===
+    >
+    >=
+    >>
+    []
+    []=
+    ^
+    |
+    ~
+    acts_like?
+    blank?
+    eql?
+    equal?
+    freeze
+    frozen?
+    hash
+    in?
+    inspect
+    is_a?
+    kind_of?
+    methods
+    new
+    nil?
+    not
+    presence
+    present?
+    respond_to?
+    tap
+    then
+    to_a
+    to_jail
+    to_param
+    to_param
+    to_query
+    to_s
+    yield_self
+  )
 
   # whitelisted methods for core classes ... kind of arbitrary selection
   @@methods_whitelist = {
-    'Array'      => %w(any? assoc at blank? collect collect! compact compact!
-                    concat delete delete_at delete_if each each_index empty?
-                    fetch fill first flatten flatten! hash include? index
-                    indexes indices inject insert join last length map map!
-                    nitems pop push present? rassoc reject reject! reverse
-                    reverse! reverse_each rindex select shift size slice
-                    slice! sort sort! transpose uniq uniq! unshift values_at
-                    zip),
-
-    'Bignum'     => %w(abs blank? ceil chr coerce div divmod downto floor hash
-                    integer? modulo next nonzero? present? quo remainder round
-                    singleton_method_added size step succ times to_f to_i
-                    to_int to_s truncate upto zero?),
-
-    'Fixnum'     => %w(abs blank? ceil chr coerce div divmod downto floor id2name
-                    integer? modulo modulo next nonzero? present? quo remainder
-                    round singleton_method_added size step succ times to_f to_i
-                    to_int to_s to_sym truncate upto zero?),
-
-    'Float'      => %w(abs blank? ceil coerce div divmod finite? floor hash
-                    infinite? integer? modulo nan? nonzero? present? quo
-                    remainder round singleton_method_added step to_f to_i
-                    to_int to_s truncate zero?),
-
-    'Hash'       => %w(any? blank? clear delete delete_if each each_key
-                    each_pair each_value empty? fetch has_key? has_value?
-                    include? index invert key? keys length member? merge merge!
-                    present? rec_merge! rehash reject reject! select shift
-                    size sort store update value? values values_at),
-
-    'Integer'    => %w(abs blank? ceil chr coerce div divmod downto floor id2name
-                    integer? modulo modulo next nonzero? present? quo remainder
-                    round singleton_method_added size step succ times to_f to_i
-                    to_int to_s to_sym truncate upto zero?),
-
-    'Range'      => %w(any? begin blank? each end exclude_end? first hash
-                    include? include_without_range? last member? present?
-                    step),
-
-    'String'     => %w(blank? capitalize capitalize! casecmp center chomp chomp!
-                    chop chop! concat count crypt delete delete! downcase
-                    downcase! dump each_byte each_line empty? end_with?
-                    force_encoding gsub gsub! hash hex include? index insert
-                    intern iseuc issjis isutf8 kconv length ljust lstrip
-                    lstrip! match next next! oct present? reverse reverse!
-                    rindex rjust rstrip rstrip! scan size slice slice! split
-                    squeeze squeeze! start_with? strip strip! sub sub! succ
-                    succ! sum swapcase swapcase! to_f to_i to_str to_sym to_xs
-                    toeuc tojis tosjis toutf16 toutf8 tr tr! tr_s tr_s! upcase
-                    upcase! upto),
-
-    'Symbol'     => %w(blank? present? to_i to_int),
-
-    'Time'       => %w(blank? _dump asctime ctime day dst? getgm getlocal
-                    getutc gmt? gmt_offset gmtime gmtoff hash hour httpdate
-                    isdst iso8601 localtime mday min minus_without_duration mon
-                    month plus_without_duration present? rfc2822 rfc822 sec
-                    strftime succ to_date to_datetime to_f to_i tv_sec tv_usec
-                    usec utc utc? utc_offset wday xmlschema yday year zone
-                    to_formatted_s),
-
-    'Date'       => %w(ajd amjd asctime blank? ctime cwday cweek cwyear day
-                    day_fraction default_inspect downto england gregorian
-                    gregorian? hash italy jd julian julian? ld leap? mday
-                    minus_without_duration mjd mon month new_start newsg next
-                    ns? os? plus_without_duration present? sg start step
-                    strftime succ upto wday yday year),
-
-    'DateTime'   => %w(blank? hour min new_offset newof of offset present? sec
-                    sec_fraction strftime to_datetime_default_s to_json zone),
-
-    'NilClass'   => %w(blank? duplicable? present? to_f to_i),
-
-    'FalseClass' => %w(blank? duplicable? present?),
-
-    'TrueClass'  => %w(blank? duplicable? present?)
+  'Array' => %w(
+    all?
+    any?
+    append
+    assoc
+    at
+    bsearch
+    bsearch_index
+    chunk
+    chunk_while
+    clear
+    collect
+    collect!
+    collect_concat
+    combination
+    compact
+    compact!
+    concat
+    count
+    cycle
+    delete
+    delete_at
+    delete_if
+    detect
+    dig
+    drop
+    drop_while
+    each
+    each_cons
+    each_entry
+    each_index
+    each_slice
+    each_with_index
+    each_with_object
+    empty?
+    entries
+    fetch
+    fill
+    find
+    find_all
+    find_index
+    first
+    flat_map
+    flatten
+    flatten!
+    grep
+    grep_v
+    group_by
+    include?
+    index
+    inject
+    insert
+    join
+    keep_if
+    last
+    lazy
+    length
+    map
+    map!
+    max
+    max_by
+    member?
+    min
+    min_by
+    minmax
+    minmax_by
+    none?
+    one?
+    pack
+    partition
+    permutation
+    pop
+    product
+    push
+    rassoc
+    reduce
+    reject
+    reject!
+    repeated_combination
+    repeated_permutation
+    replace
+    reverse
+    reverse!
+    reverse_each
+    rindex
+    rotate
+    rotate!
+    sample
+    select
+    select!
+    shift
+    shuffle
+    shuffle!
+    size
+    slice
+    slice!
+    slice_after
+    slice_before
+    slice_when
+    sort
+    sort!
+    sort_by
+    sort_by!
+    sum
+    take
+    take_while
+    to_ary
+    to_h
+    to_set
+    transpose
+    uniq
+    uniq!
+    unshift
+    values_at
+    zip
+  ),
+  'Float' => %w(
+    abs
+    abs2
+    angle
+    arg
+    between?
+    ceil
+    clamp
+    coerce
+    conj
+    conjugate
+    denominator
+    div
+    divmod
+    fdiv
+    finite?
+    floor
+    i
+    imag
+    imaginary
+    infinite?
+    integer?
+    magnitude
+    modulo
+    nan?
+    negative?
+    next_float
+    nonzero?
+    numerator
+    phase
+    polar
+    positive?
+    prev_float
+    quo
+    rationalize
+    real
+    real?
+    rect
+    rectangular
+    remainder
+    round
+    step
+    to_c
+    to_f
+    to_i
+    to_int
+    to_r
+    truncate
+    zero?
+  ),
+  'Hash' => %w(
+    all?
+    any?
+    assoc
+    chunk
+    chunk_while
+    clear
+    collect
+    collect_concat
+    compact
+    compact!
+    compare_by_identity
+    compare_by_identity?
+    count
+    cycle
+    default
+    default=
+    default_proc
+    default_proc=
+    delete
+    delete_if
+    detect
+    dig
+    drop
+    drop_while
+    each
+    each_cons
+    each_entry
+    each_key
+    each_pair
+    each_slice
+    each_value
+    each_with_index
+    each_with_object
+    empty?
+    entries
+    fetch
+    fetch_values
+    find
+    find_all
+    find_index
+    first
+    flat_map
+    flatten
+    grep
+    grep_v
+    group_by
+    has_key?
+    has_value?
+    include?
+    index
+    inject
+    invert
+    keep_if
+    key
+    key?
+    keys
+    lazy
+    length
+    map
+    max
+    max_by
+    member?
+    merge
+    merge!
+    min
+    min_by
+    minmax
+    minmax_by
+    none?
+    one?
+    partition
+    rassoc
+    reduce
+    rehash
+    reject
+    reject!
+    replace
+    reverse_each
+    select
+    select!
+    shift
+    size
+    slice
+    slice_after
+    slice_before
+    slice_when
+    sort
+    sort_by
+    store
+    sum
+    take
+    take_while
+    to_h
+    to_hash
+    to_proc
+    to_set
+    transform_keys
+    transform_keys!
+    transform_values
+    transform_values!
+    uniq
+    update
+    value?
+    values
+    values_at
+    zip
+  ),
+  'Range' => %w(
+    all?
+    any?
+    begin
+    bsearch
+    chunk
+    chunk_while
+    collect
+    collect_concat
+    count
+    cover?
+    cycle
+    detect
+    drop
+    drop_while
+    each
+    each_cons
+    each_entry
+    each_slice
+    each_with_index
+    each_with_object
+    end
+    entries
+    exclude_end?
+    find
+    find_all
+    find_index
+    first
+    flat_map
+    grep
+    grep_v
+    group_by
+    include?
+    inject
+    last
+    lazy
+    map
+    max
+    max_by
+    member?
+    min
+    min_by
+    minmax
+    minmax_by
+    none?
+    one?
+    partition
+    reduce
+    reject
+    reverse_each
+    select
+    size
+    slice_after
+    slice_before
+    slice_when
+    sort
+    sort_by
+    step
+    sum
+    take
+    take_while
+    to_h
+    to_set
+    uniq
+    zip
+  ),
+  'String' => %w(
+    ascii_only?
+    b
+    between?
+    bytes
+    bytesize
+    byteslice
+    capitalize
+    capitalize!
+    casecmp
+    casecmp?
+    center
+    chars
+    chomp
+    chomp!
+    chop
+    chop!
+    chr
+    clamp
+    clear
+    codepoints
+    concat
+    count
+    crypt
+    delete
+    delete!
+    delete_prefix
+    delete_prefix!
+    delete_suffix
+    delete_suffix!
+    downcase
+    downcase!
+    dump
+    each_byte
+    each_char
+    each_codepoint
+    each_grapheme_cluster
+    each_line
+    empty?
+    encode
+    encode!
+    encoding
+    end_with?
+    ext
+    force_encoding
+    getbyte
+    grapheme_clusters
+    grep
+    gsub
+    gsub!
+    hex
+    include?
+    index
+    insert
+    intern
+    length
+    lineno
+    lineno=
+    lines
+    ljust
+    lstrip
+    lstrip!
+    match
+    match?
+    next
+    next!
+    oct
+    ord
+    partition
+    replace
+    reverse
+    reverse!
+    rindex
+    rjust
+    rpartition
+    rstrip
+    rstrip!
+    scan
+    scrub
+    scrub!
+    setbyte
+    size
+    slice
+    slice!
+    split
+    squeeze
+    squeeze!
+    start_with?
+    strip
+    strip!
+    sub
+    sub!
+    succ
+    succ!
+    sum
+    swapcase
+    swapcase!
+    to_c
+    to_f
+    to_i
+    to_r
+    to_str
+    to_sym
+    tr
+    tr!
+    tr_s
+    tr_s!
+    undump
+    unicode_normalize
+    unicode_normalize!
+    unicode_normalized?
+    unpack
+    unpack1
+    upcase
+    upcase!
+    upto
+    valid_encoding?
+    # methods from other classes named as String
+    iseuc
+    isjis
+    issjis
+    isutf8
+    kconv
+    toeuc
+    tojis
+    tolocale
+    tosjis
+    toutf16
+    toutf32
+    toutf8
+  ),
+  'Symbol' => %w(
+    between?
+    capitalize
+    casecmp
+    casecmp?
+    clamp
+    downcase
+    empty?
+    encoding
+    id2name
+    intern
+    length
+    match
+    match?
+    next
+    size
+    slice
+    succ
+    swapcase
+    to_proc
+    to_sym
+    upcase
+  ),
+  'Time' => %w(
+    asctime
+    between?
+    clamp
+    ctime
+    day
+    dst?
+    friday?
+    getgm
+    getlocal
+    getutc
+    gmt?
+    gmt_offset
+    gmtime
+    gmtoff
+    hour
+    isdst
+    localtime
+    mday
+    min
+    mon
+    monday?
+    month
+    nsec
+    round
+    saturday?
+    sec
+    strftime
+    subsec
+    succ
+    sunday?
+    thursday?
+    to_date
+    to_datetime
+    to_f
+    to_i
+    to_r
+    to_time
+    tuesday?
+    tv_nsec
+    tv_sec
+    tv_usec
+    usec
+    utc
+    utc?
+    utc_offset
+    wday
+    wednesday?
+    yday
+    year
+    zone
+  ),
+  'Date' => %w(
+    ajd
+    amjd
+    asctime
+    between?
+    clamp
+    ctime
+    cwday
+    cweek
+    cwyear
+    day
+    day_fraction
+    downto
+    england
+    friday?
+    gregorian
+    gregorian?
+    httpdate
+    iso8601
+    italy
+    jd
+    jisx0301
+    julian
+    julian?
+    ld
+    leap?
+    mday
+    mjd
+    mon
+    monday?
+    month
+    new_start
+    next
+    next_day
+    next_month
+    next_year
+    prev_day
+    prev_month
+    prev_year
+    rfc2822
+    rfc3339
+    rfc822
+    saturday?
+    start
+    step
+    strftime
+    succ
+    sunday?
+    thursday?
+    to_date
+    to_datetime
+    to_time
+    tuesday?
+    upto
+    wday
+    wednesday?
+    xmlschema
+    yday
+    year
+  ),
+  'DateTime' => %w(
+    ajd
+    amjd
+    asctime
+    between?
+    clamp
+    ctime
+    cwday
+    cweek
+    cwyear
+    day
+    day_fraction
+    downto
+    england
+    friday?
+    gregorian
+    gregorian?
+    hour
+    httpdate
+    iso8601
+    italy
+    jd
+    jisx0301
+    julian
+    julian?
+    ld
+    leap?
+    mday
+    min
+    minute
+    mjd
+    mon
+    monday?
+    month
+    new_offset
+    new_start
+    next
+    next_day
+    next_month
+    next_year
+    offset
+    prev_day
+    prev_month
+    prev_year
+    rfc2822
+    rfc3339
+    rfc822
+    saturday?
+    sec
+    sec_fraction
+    second
+    second_fraction
+    start
+    step
+    strftime
+    succ
+    sunday?
+    thursday?
+    to_date
+    to_datetime
+    to_time
+    tuesday?
+    upto
+    wday
+    wednesday?
+    xmlschema
+    yday
+    year
+    zone
+  ),
+  'NilClass' => %w(
+    rationalize
+    to_c
+    to_f
+    to_h
+    to_i
+    to_r
+  ),
+  'FalseClass' => %w(
+  ),
+  'TrueClass' => %w(
+  ),
+  'Integer' => %w(
+    abs
+    abs2
+    allbits?
+    angle
+    anybits?
+    arg
+    between?
+    bit_length
+    ceil
+    chr
+    clamp
+    coerce
+    conj
+    conjugate
+    denominator
+    digits
+    div
+    divmod
+    downto
+    even?
+    fdiv
+    finite?
+    floor
+    gcd
+    gcdlcm
+    i
+    imag
+    imaginary
+    infinite?
+    integer?
+    lcm
+    magnitude
+    modulo
+    negative?
+    next
+    nobits?
+    nonzero?
+    numerator
+    odd?
+    ord
+    phase
+    polar
+    positive?
+    pow
+    pred
+    quo
+    rationalize
+    real
+    real?
+    rect
+    rectangular
+    remainder
+    round
+    size
+    step
+    succ
+    times
+    to_bn
+    to_c
+    to_f
+    to_i
+    to_int
+    to_r
+    truncate
+    upto
+    zero?
+  ),
+  # Bignum was unified with Integer in Ruby 2.4
+  'Bignum' => %w(
+    abs
+    blank?
+    ceil
+    coerce
+    div
+    divmod
+    downto
+    floor
+    hash
+    chr
+    integer?
+    modulo
+    next
+    nonzero?
+    present?
+    quo
+    remainder
+    round
+    singleton_method_added
+    size
+    step
+    succ
+    times
+    to_f
+    to_i
+    to_int
+    to_s
+    truncate
+    upto
+    zero?
+  ),
+  # Fixnum was unified with Integer in Ruby 2.4
+  'Fixnum' => %w(
+    abs
+    blank?
+    ceil
+    coerce
+    div
+    divmod
+    downto
+    floor
+    chr
+    id2name
+    integer?
+    modulo
+    modulo
+    next
+    nonzero?
+    present?
+    quo
+    remainder
+    round
+    singleton_method_added
+    size
+    step
+    succ
+    times
+    to_f
+    to_i
+    to_int
+    to_s
+    to_sym
+    truncate
+    upto
+    zero?
+  ),
   }
 
   # these class methods are allowed on all classes if they are present
