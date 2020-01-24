@@ -52,7 +52,7 @@ module Safemode
                     nitems pop push present? rassoc reject reject! reverse
                     reverse! reverse_each rindex select shift size slice
                     slice! sort sort! transpose uniq uniq! unshift values_at
-                    zip),
+                    zip min max),
 
     'Bignum'     => %w(abs blank? ceil chr coerce div divmod downto floor hash
                     integer? modulo next nonzero? present? quo remainder round
