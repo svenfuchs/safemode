@@ -49,6 +49,13 @@ end
 This will allow your template users to access the name method on your User 
 objects.
 
+Safemode supports logical compound assignments such as `user.name ||= value`,
+`user&.name &&= value`, and `values[0] ||= value`. Their getters and conditional
+setters are mediated by Jail, so both methods must be allowed when an assignment
+is required. Compound assignments that implicitly invoke another operator, such
+as `user.count += 1`, raise `Safemode::SecurityError`. Compound assignments to
+local variables remain supported and their method calls are mediated by Jail.
+
 Class methods can be whitelisted by calling `allow_class_method :foo` from
 within the Jail. Note that access to raw constants is not permitted, so the
 class is only accessible when returned by a method or passed into a template.

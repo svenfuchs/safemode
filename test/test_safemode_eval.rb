@@ -5,6 +5,128 @@ require File.join(File.dirname(__FILE__), 'test_helper')
 class TestSafemodeEval < Test::Unit::TestCase
   include TestHelper
 
+  class CompoundAssignmentProbe
+    attr_reader :calls
+
+    def initialize(status: nil)
+      @calls = []
+      @target = Target.new(@calls, status)
+    end
+
+    def record(value)
+      @calls << value
+    end
+
+    def receiver
+      @calls << :receiver
+      @target
+    end
+
+    def nil_receiver
+      @calls << :nil_receiver
+      nil
+    end
+
+    def index
+      @calls << :index
+      0
+    end
+
+    def rhs
+      @calls << :rhs
+      1
+    end
+
+    def operator_value
+      @calls << :operator_value
+      OperatorValue.new(@calls)
+    end
+
+    def operator_target
+      @calls << :operator_target
+      Target.new(@calls, OperatorValue.new(@calls))
+    end
+
+    def denied_receiver
+      @calls << :denied_receiver
+      DeniedTarget.new(@calls)
+    end
+
+    class Target
+      def initialize(calls, status)
+        @calls = calls
+        @status = status
+        @values = {}
+      end
+
+      def status
+        @calls << :getter
+        @status
+      end
+
+      def status=(value)
+        @calls << :setter
+        @status = value
+      end
+
+      def [](index)
+        @calls << :index_getter
+        @values[index]
+      end
+
+      def []=(index, value)
+        @calls << :index_setter
+        @values[index] = value
+      end
+
+      class Jail < Safemode::Jail
+        allow :status, :status=, :[], :[]=
+      end
+    end
+
+    class OperatorValue
+      def initialize(calls)
+        @calls = calls
+      end
+
+      def +(_value)
+        @calls << :operator
+        2
+      end
+    end
+
+    class DeniedTarget
+      def initialize(calls)
+        @calls = calls
+      end
+
+      def status
+        @calls << :denied_getter
+      end
+
+      def status=(_value)
+        @calls << :denied_setter
+      end
+
+      def [](_index)
+        @calls << :denied_index_getter
+      end
+
+      def []=(_index, _value)
+        @calls << :denied_index_setter
+      end
+
+      class Jail < Safemode::Jail
+        allow :status=, :[]=
+      end
+    end
+
+    class Jail < Safemode::Jail
+      allow :record, :receiver, :nil_receiver, :index, :rhs, :operator_value,
+            :operator_target, :denied_receiver
+    end
+  end
+
   def setup
     @box = Safemode::Box.new
     @locals = { :article => Article.new }
@@ -178,21 +300,155 @@ class TestSafemodeEval < Test::Unit::TestCase
     assert_raise(Safemode::SecurityError) { @box.eval('@article&.status = "new_value"', @assigns) }
   end
 
-  # op_asgn2 (@article.status ||= val) is NOT blocked at parse time.
-  # NOTE: .to_jail is not inserted on the receiver, so the setter is called
-  # directly on the real object, bypassing the Jail whitelist.
-  def test_op_asgn2_bypasses_jail
-    article = Article.new
-    assert_nil article.status
-    @box.eval('@article.status ||= "new_value"', { article: article })
-    assert_equal "new_value", article.status
+  def test_index_assignment_is_blocked
+    assert_raise(Safemode::SecurityError) { @box.eval('@article[0] = "new_value"', @assigns) }
   end
 
-  def test_safe_op_asgn2_bypasses_jail
+  def test_attribute_logical_compound_assignment_requires_an_allowed_setter
     article = Article.new
+    assert_raise(Safemode::NoMethodError) do
+      @box.eval('@article.status ||= "new_value"', { article: article })
+    end
     assert_nil article.status
-    @box.eval('@article&.status ||= "new_value"', { article: article })
-    assert_equal "new_value", article.status
+  end
+
+  def test_attribute_logical_compound_assignment_requires_an_allowed_getter
+    probe = CompoundAssignmentProbe.new
+
+    assert_raise(Safemode::NoMethodError) do
+      @box.eval('@probe.denied_receiver.status ||= "default"', { probe: probe })
+    end
+    assert_equal [:denied_receiver], probe.calls
+  end
+
+  def test_index_logical_compound_assignment_requires_an_allowed_getter
+    probe = CompoundAssignmentProbe.new
+
+    assert_raise(Safemode::NoMethodError) do
+      @box.eval('@probe.denied_receiver[0] ||= "default"', { probe: probe })
+    end
+    assert_equal [:denied_receiver], probe.calls
+  end
+
+  def test_attribute_logical_compound_assignment_uses_jail
+    probe = CompoundAssignmentProbe.new
+
+    assert_equal 'default', @box.eval('@probe.receiver.status ||= "default"', { probe: probe })
+    assert_equal [:receiver, :getter, :setter], probe.calls
+  end
+
+  def test_attribute_and_assignment_uses_jail
+    probe = CompoundAssignmentProbe.new(status: 'existing')
+
+    assert_equal 'replacement', @box.eval('@probe.receiver.status &&= "replacement"', { probe: probe })
+    assert_equal [:receiver, :getter, :setter], probe.calls
+  end
+
+  def test_attribute_logical_compound_assignment_short_circuits_setter
+    article = Article.new
+    article.status = 'existing'
+
+    assert_equal 'existing', @box.eval('@article.status ||= "default"', { article: article })
+    assert_equal 'existing', article.status
+  end
+
+  def test_safe_attribute_logical_compound_assignment_uses_jail
+    probe = CompoundAssignmentProbe.new
+
+    assert_equal 'default', @box.eval('@probe.receiver&.status ||= "default"', { probe: probe })
+    assert_equal [:receiver, :getter, :setter], probe.calls
+  end
+
+  def test_safe_attribute_logical_compound_assignment_short_circuits_nil_receiver
+    probe = CompoundAssignmentProbe.new
+
+    assert_nil @box.eval('@probe.nil_receiver&.status ||= @probe.rhs', { probe: probe })
+    assert_equal [:nil_receiver], probe.calls
+  end
+
+  def test_index_logical_compound_assignment_uses_jail
+    probe = CompoundAssignmentProbe.new
+
+    assert_equal 1, @box.eval('@probe.receiver[@probe.index] ||= @probe.rhs', { probe: probe })
+    assert_equal [:receiver, :index, :index_getter, :rhs, :index_setter], probe.calls
+  end
+
+  def test_object_logical_compound_assignment_rhs_uses_jail
+    probe = CompoundAssignmentProbe.new
+
+    assert_raise(Safemode::NoMethodError) do
+      @box.eval('@probe.receiver.status ||= @article.system', { probe: probe, article: Article.new })
+    end
+    assert_equal [:receiver, :getter], probe.calls
+  end
+
+  def test_attribute_operator_compound_assignment_is_blocked
+    assert_raise(Safemode::SecurityError) do
+      @box.eval('@article.status += 1', @assigns)
+    end
+  end
+
+  def test_safe_attribute_operator_compound_assignment_is_blocked
+    assert_raise(Safemode::SecurityError) do
+      @box.eval('@article&.status += 1', @assigns)
+    end
+  end
+
+  def test_compound_assignment_is_rejected_before_template_execution
+    [
+      '@probe.record(:earlier); @probe.operator_target.status += @probe.rhs',
+      '@probe.receiver[@probe.index] += @probe.rhs',
+      'false && (@probe.receiver.status += @probe.rhs)',
+      '@probe.nil_receiver&.status += @probe.rhs',
+    ].each do |code|
+      probe = CompoundAssignmentProbe.new
+
+      assert_raise(Safemode::SecurityError, code) do
+        @box.eval(code, { probe: probe })
+      end
+      assert_empty(probe.calls, code)
+    end
+  end
+
+  def test_local_logical_compound_assignments_are_preserved
+    assert_equal 1, @box.eval('x = nil; x ||= 1; x')
+    assert_equal 1, @box.eval('x = false; x ||= 1; x')
+    assert_equal 2, @box.eval('x = 2; x ||= 1; x')
+    assert_equal 1, @box.eval('x = 2; x &&= 1; x')
+    assert_equal false, @box.eval('x = false; x &&= 1; x')
+  end
+
+  def test_local_logical_compound_assignments_short_circuit
+    probe = CompoundAssignmentProbe.new
+
+    assert_equal 1, @box.eval('x = nil; x ||= @probe.rhs; x', { probe: probe })
+    assert_equal [:rhs], probe.calls
+
+    probe = CompoundAssignmentProbe.new
+    assert_equal 2, @box.eval('x = 2; x ||= @probe.rhs; x', { probe: probe })
+    assert_equal false, @box.eval('x = false; x &&= @probe.rhs; x', { probe: probe })
+    assert_empty probe.calls
+  end
+
+  def test_evaluated_local_compound_assignment_rhs_uses_jail
+    assert_raise(Safemode::NoMethodError) do
+      @box.eval('x = nil; x ||= @article.system', @assigns)
+    end
+  end
+
+  def test_local_operator_compound_assignments_are_preserved
+    assert_equal 3, @box.eval('x = 2; x += 1; x')
+    assert_equal 8, @box.eval('x = 2; x **= 3; x')
+    assert_equal 4, @box.eval('x = 2; x <<= 1; x')
+  end
+
+  def test_local_operator_compound_assignment_uses_jail
+    probe = CompoundAssignmentProbe.new
+
+    assert_raise(Safemode::NoMethodError) do
+      @box.eval('x = @probe.operator_value; x += 1', { probe: probe })
+    end
+    assert_equal [:operator_value], probe.calls
   end
 
   def test_instance_variable_get_blocked_on_jail
